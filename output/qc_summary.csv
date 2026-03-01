@@ -1,0 +1,8 @@
+metric,value
+n_rows,5319.0
+dup_seqn,0.0
+missing_bmi,82.0
+missing_sbp_mean,246.0
+missing_weights,0.0
+bmi_out_of_range,2.0
+sbp_out_of_range,0.0

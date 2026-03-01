@@ -1,0 +1,181 @@
+---
+title: "Survey Design, Analysis, and Reporting Final Project"
+author: "Tauras Lu"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/Users/tauras/Documents/Code/nhanes_sql")
+
+library(tidyverse)
+library(haven)
+library(survey)
+library(gtsummary)
+```
+
+```{r}
+ 
+
+data <- read.csv("output/analysis_dataset.csv")
+
+head(data)
+
+glimpse(data)
+summary(data)
+
+
+```
+
+```{r}
+qc <- data %>%
+  summarise(
+    n_rows = n(),
+    dup_seqn = n() - n_distinct(SEQN),
+    missing_bmi = sum(is.na(bmi)),
+    missing_sbp = sum(is.na(sbp_mean)),
+    missing_wt = sum(is.na(WTMEC2YR)),
+    bmi_out_of_range = sum(bmi < 10 | bmi > 80, na.rm = TRUE),
+    sbp_out_of_range = sum(sbp_mean < 70 | sbp_mean > 250, na.rm = TRUE),
+    n_sbp_lt2 = sum(n_sbp < 2, na.rm = TRUE)
+  )
+
+qc
+
+```
+
+```{r}
+df <- data %>%
+  filter(
+    age >= 20,
+    !is.na(WTMEC2YR), !is.na(SDMVPSU), !is.na(SDMVSTRA),
+    !is.na(bmi), !is.na(sbp_mean), !is.na(dbp_mean),
+    n_sbp >= 2,
+    between(bmi, 10, 80),
+    between(sbp_mean, 70, 250)
+  ) %>%
+  mutate(
+    sex = factor(sex, levels = c(1,2), labels = c("Male","Female")),
+    bp_med2 = ifelse(is.na(bp_med), 0, bp_med), 
+    htn = as.integer((sbp_mean >= 140) | (dbp_mean >= 90) | (bp_med2 == 1))
+  )
+
+head(df)
+
+table(df$htn, useNA = "ifany")
+
+
+
+
+```
+
+```{r}
+des <- svydesign(
+  ids = ~SDMVPSU,
+  strata = ~SDMVSTRA,
+  weights = ~WTMEC2YR,
+  nest = TRUE,
+  data = df
+)
+```
+
+
+
+```{r}
+#Survey-Weighted
+
+#overall
+svymean(~bmi + sbp_mean + dbp_mean, des, na.rm = T)
+
+#by sex
+svyby(~bmi + sbp_mean + dbp_mean,
+      ~sex,
+      des,
+      svymean,
+      na.rm = TRUE)
+
+#hypertension prevalence
+svymean(~htn, des)
+```
+
+```{r}
+model_lin <- svyglm(
+  sbp_mean ~ bmi + age + sex + smoker + diabetes,
+  design = des
+)
+
+summary(model_lin)
+
+```
+
+```{r}
+model_log <- svyglm(
+  htn ~ bmi + age + sex + smoker + diabetes,
+  design = des,
+  family = quasibinomial()
+)
+
+summary(model_log)
+
+exp(coef(model_log))  # OR
+
+
+
+```
+
+```{r}
+tbl_regression(
+  model_log,
+  exponentiate = TRUE
+) %>%
+  bold_p(t = 0.05)
+
+```
+
+
+```{r}
+coef_df <- as.data.frame(summary(model_log)$coefficients)
+
+ci <- confint(model_log)
+
+plot_df <- coef_df %>%
+  mutate(
+    term = rownames(coef_df),
+    OR = exp(Estimate),
+    lower = exp(ci[,1]),
+    upper = exp(ci[,2])
+  ) %>%
+  filter(term != "(Intercept)") %>%
+  select(term, OR, lower, upper)
+
+plot_df <- plot_df %>%
+  mutate(term = recode(term,
+                       "bmi" = "BMI",
+                       "age" = "Age",
+                       "sexFemale" = "Female (vs Male)",
+                       "smoker" = "Smoker",
+                       "diabetes" = "Diabetes"))
+
+ggplot(plot_df, aes(x = OR, y = reorder(term, OR))) +
+  geom_point(size = 3) +
+  geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.2) +
+  geom_vline(xintercept = 1, linetype = "dashed") +
+  scale_x_log10() +
+  labs(
+    x = "Odds Ratio (log scale)",
+    y = "",
+    title = "Survey-weighted Logistic Regression for Hypertension"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+
+
+
+
+
+
+
+
+
