@@ -1,25 +1,20 @@
-# NHANES 2011–2012 Survey-Weighted Hypertension Analysis
+# NHANES 2011–2012 Survey-Weighted Hypertension Risk Analysis
 
-## Overview
+## Motivation
 
-This project demonstrates a full clinical data workflow using NHANES 2011–2012 data, integrating:
-
-- SQL-based dataset construction
-- Python ETL pipeline
-- Complex survey design analysis (NHANES sampling structure)
-- Survey-weighted logistic regression
-- Publication-style visualization (forest plot)
-
-The objective was to evaluate independent risk factors associated with hypertension among U.S. adults.
+Hypertension remains one of the leading modifiable risk factors for cardiovascular disease in the United States. Using nationally representative NHANES data, this project evaluates independent risk factors associated with hypertension under a complex survey sampling design.
 
 ---
 
-## Data Source
+## Study Population
 
-- National Health and Nutrition Examination Survey (NHANES) 2011–2012
-- Publicly available data from CDC
+- Data source: NHANES 2011–2012 (CDC)
+- Initial adult sample (age ≥ 20): **5,319 participants**
+- Final analytic sample after exclusions: **4,988 participants**
+- Survey design: Stratified, multi-stage cluster sampling
+- Sampling weights: `WTMEC2YR`
 
-Hypertension was defined as:
+Hypertension defined as:
 - SBP ≥ 140 mmHg, OR
 - DBP ≥ 90 mmHg, OR
 - Current use of antihypertensive medication
@@ -29,33 +24,38 @@ Hypertension was defined as:
 ## Methods
 
 ### Data Engineering
-- Python (`pandas`, `SQLAlchemy`) used to ingest XPT files
-- MySQL used to construct analysis dataset
-- QC checks performed (missingness, out-of-range values, duplicates)
+- Python (`pandas`, `SQLAlchemy`) used to ingest NHANES XPT files
+- MySQL used to construct analytic dataset
+- Data quality checks: missingness, range validation, duplicate checks
+- Exported cleaned dataset for statistical modeling
 
 ### Statistical Analysis
-- Survey design: stratified, cluster sampling
-- Weights: WTMEC2YR
-- R package: `survey`
-- Model: survey-weighted logistic regression
-
-Outcome:
-- Hypertension (binary)
-
-Covariates:
-- BMI
-- Age
-- Sex
-- Smoking status
-- Diabetes status
+- R (`survey` package)
+- Survey-weighted logistic regression
+- Outcome: Hypertension (binary)
+- Covariates:
+  - BMI
+  - Age
+  - Sex
+  - Smoking status
+  - Diabetes status
 
 ---
 
 ## Key Findings
 
-- Diabetes strongly associated with hypertension (OR 2.29, 95% CI 1.56–3.37)
-- BMI and age independently associated with increased odds
-- Sex and smoking were not statistically significant after adjustment
+After adjusting for covariates:
+
+- **Diabetes** was strongly associated with hypertension  
+  (OR 2.29, 95% CI 1.56–3.37)  
+  → Diabetic individuals had approximately **2.3× higher odds** of hypertension.
+
+- **BMI** and **age** were independently associated with increased odds  
+  (OR ≈ 1.08 per unit increase).
+
+- Sex and smoking were not statistically significant after adjustment.
+
+These findings align with established epidemiologic evidence and demonstrate proper application of survey-weighted inference.
 
 ---
 
@@ -68,16 +68,17 @@ A publication-style forest plot was generated to display adjusted odds ratios:
 ---
 
 ## Project Structure
+```
 nhanes_sql/
-├── data.py # Python ETL + SQL pipeline
-├── Nhanes_personal_project.Rmd
-├── Nhanes_personal_project.pdf
-├── output/
-│ ├── analysis_dataset.csv
-│ ├── qc_summary.csv
-│ ├── forest_plot_htn.png
-│ ├── regression_table.png
-
+├── data.py                        # Python ETL + SQL pipeline
+├── Nhanes_personal_project.Rmd    # Analysis report (R Markdown)
+├── Nhanes_personal_project.pdf    # Compiled report
+└── output/
+    ├── analysis_dataset.csv       # Cleaned analysis dataset
+    ├── qc_summary.csv             # Quality control summary
+    ├── forest_plot_htn.png        # Forest plot (hypertension)
+    └── regression_table.png       # Regression results table
+```
 
 ---
 
@@ -85,7 +86,7 @@ nhanes_sql/
 
 - Python for data construction
 - R for survey-weighted modeling
-- Fully reproducible workflow from raw NHANES files
+- Fully reproducible workflow from raw NHANES(2011-2012) files
 
 ---
 

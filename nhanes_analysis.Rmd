@@ -1,5 +1,5 @@
 ---
-title: "Survey Design, Analysis, and Reporting Final Project"
+title: "Nhanes 2011-2012 Hypertension Analysis"
 author: "Tauras Lu"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -13,6 +13,7 @@ library(tidyverse)
 library(haven)
 library(survey)
 library(gtsummary)
+library(gt)
 ```
 
 ```{r}
@@ -125,12 +126,17 @@ exp(coef(model_log))  # OR
 ```
 
 ```{r}
-tbl_regression(
+reg_table <- tbl_regression(
   model_log,
   exponentiate = TRUE
 ) %>%
   bold_p(t = 0.05)
 
+gtsave(
+  as_gt(reg_table),
+  "output/regression_table.png"
+
+)
 ```
 
 
@@ -168,7 +174,17 @@ ggplot(plot_df, aes(x = OR, y = reorder(term, OR))) +
     title = "Survey-weighted Logistic Regression for Hypertension"
   ) +
   theme_minimal(base_size = 14)
+
+ggsave(
+  "output/forest_plot_htn.png",
+  width = 8,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
 ```
+
+
 
 
 
