@@ -90,11 +90,4 @@ nhanes_sql/
 
 ---
 
-## Skills Demonstrated
 
-- SQL data construction
-- Python ETL pipeline
-- Complex survey analysis
-- Logistic regression modeling
-- Clinical result interpretation
-- Publication-quality visualization
